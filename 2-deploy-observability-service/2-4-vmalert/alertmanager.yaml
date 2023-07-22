@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vmalertmanager-default-alertmanager
+  labels:
+    app: vm-operator
+type: Opaque
+stringData:
+  alertmanager.yaml: |
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: 'webhook'
+    receivers:
+      - name: 'webhook'
+        webhook_configs:
+          - url: 'http://alertmanagerwh:30500/'
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAlertmanager
+metadata:
+  name: default-alertmanager
+spec:
+  replicaCount: 1
+  configSecret: vmalertmanager-default-alertmanager

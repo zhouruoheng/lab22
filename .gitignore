@@ -1,0 +1,5 @@
+/lab3-cloud-service-availability.iml
+.idea
+/node_modules/
+/1-create-an-eks-cluster/kubeconfig.yaml
+/lab2-cloud-service-availability.iml

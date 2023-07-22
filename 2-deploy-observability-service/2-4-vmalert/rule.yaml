@@ -1,0 +1,21 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: default-rule
+  namespace: observability
+  labels:
+    tenant: observability
+spec:
+  groups:
+  - name: k8s.rules
+    rules:
+      - alert: KubePodCrashLooping
+        expr: |
+          increase(kube_pod_container_status_restarts_total{pod=~"node-exporter-.*"}[1h]) > 5
+        for: 5m
+      # The count of CPUs per node, useful for getting CPU time as a percent of total.
+      - record: instance:node_cpus:count
+        expr: count(node_cpu_seconds_total{mode="idle"}) without (cpu,mode)
+      - alert: MockAlert
+        expr: increase(go_gc_duration_seconds{}[1m]) > 0
+

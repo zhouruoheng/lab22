@@ -1,0 +1,73 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    tenant: observability
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMCluster
+metadata:
+  name: vmcluster
+  namespace: observability
+spec:
+  replicationFactor: 1
+  retentionPeriod: "1"
+  vminsert:
+    image: {}
+    podMetadata:
+      labels:
+        owner: infra
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: "0.05"
+        memory: 64Mi
+      limits:
+        cpu: "0.2"
+        memory: 256Mi
+  vmselect:
+    cacheMountPath: /select-cache
+    image: {}
+    podMetadata:
+      labels:
+        owner: infra
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: "0.05"
+        memory: 64Mi
+      limits:
+        cpu: "0.2"
+        memory: 256Mi
+    storage:
+      volumeClaimTemplate:
+        metadata: {}
+        spec:
+          resources:
+            requests:
+              storage: 1Gi
+        status: {}
+  vmstorage:
+    image: {}
+    podMetadata:
+      labels:
+        owner: infra
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: "0.02"
+        memory: 256Mi
+      limits:
+        cpu: "0.2"
+        memory: 512Mi
+    storage:
+      volumeClaimTemplate:
+        metadata: {}
+        spec:
+          resources:
+            requests:
+              storage: 5Gi
+        status: {}
+    storageDataPath: /vm-data

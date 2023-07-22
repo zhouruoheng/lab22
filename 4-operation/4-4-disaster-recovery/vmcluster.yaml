@@ -1,0 +1,107 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMCluster
+metadata:
+  name: vmcluster
+  namespace: observability
+spec:
+  replicationFactor: 2
+  retentionPeriod: "1"
+  # replicationFactor instructs vminsert to store N copies for every ingested sample on N distinct vmstorage nodes.
+  # This guarantees that all the stored data remains available for querying if up to N-1 vmstorage nodes are unavailable.
+  vminsert:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - vminsert
+            topologyKey: kubernetes.io/hostname
+          weight: 100
+    image: {}
+    podMetadata:
+      labels:
+        owner: infra
+    replicaCount: 0
+    resources:
+      requests:
+        cpu: "0.2"
+        memory: 64Mi
+      limits:
+        cpu: "0.5"
+        memory: 256Mi
+  vmselect:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - vmselect
+            topologyKey: kubernetes.io/hostname
+          weight: 100
+    cacheMountPath: /select-cache
+    image: {}
+    podMetadata:
+      labels:
+        owner: infra
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: "0.2"
+        memory: 64Mi
+      limits:
+        cpu: "0.2"
+        memory: 256Mi
+    storage:
+      volumeClaimTemplate:
+        metadata: {}
+        spec:
+          resources:
+            requests:
+              storage: 1Gi
+        status: {}
+  vmstorage:
+    affinity:
+      podAntiAffinity:
+        # the replicas get the label app.kubernetes.io/name=vmstorage.
+        # The podAntiAffinity rule tells the scheduler to avoid placing multiple replicas with the app.kubernetes.io/name=vmstorage label on a single node.
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - vmstorage
+            topologyKey: kubernetes.io/hostname
+          weight: 100
+    image: {}
+    podMetadata:
+      labels:
+        owner: infra
+    replicaCount: 3
+    # This configuration will start two replicas (pods) of the vmstorage service.
+    # When one of the pods crashes, the other pod can still provide services
+    resources:
+      requests:
+        cpu: "0.2"
+        memory: 64Mi
+      limits:
+        cpu: "0.2"
+        memory: 512Mi
+    storage:
+      volumeClaimTemplate:
+        metadata: {}
+        spec:
+          resources:
+            requests:
+              storage: 5Gi
+        status: {}
+    storageDataPath: /vm-data
